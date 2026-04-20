@@ -1,235 +1,190 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
-import FingerprintJS from "@fingerprintjs/fingerprintjs";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import pepperMascot from "@/assets/pepper-mascot.png";
 import chiliBanner from "@/assets/chili-banner.jpg";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Landing,
   head: () => ({
     meta: [
-      { title: "ChiliCheck 🌶️ — Spicy IP & Fingerprint Lookup" },
-      { name: "description", content: "Find your IP, host, provider and browser fingerprint with a spicy chili con carne twist." },
+      { title: "ChiliCheck 🌶️ — Spicy IP & Browser Fingerprint Tool" },
+      { name: "description", content: "ChiliCheck reveals your IP, host, provider and browser fingerprint — served with a chili con carne twist. Privacy-first, runs in your browser." },
+      { property: "og:title", content: "ChiliCheck 🌶️ — Spicy IP & Browser Fingerprint Tool" },
+      { property: "og:description", content: "Find out how spicy (unique) your browser fingerprint really is." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d4679f3c-ce07-4010-b9bc-441fd4b67bad/id-preview-bed3db96--b6e69cd6-b32c-4266-aed6-c1dd4a02da84.lovable.app-1776707827764.png" },
     ],
   }),
 });
 
-type IpInfo = {
-  ip: string;
-  hostname?: string;
-  org?: string;
-  city?: string;
-  region?: string;
-  country_name?: string;
-  asn?: string;
-};
-
-const PEPPERS = [
-  { name: "Bell Pepper", emoji: "🫑", desc: "Mild & common — you blend right in!", scoville: "0 SHU" },
-  { name: "Banana Pepper", emoji: "🌶️", desc: "A little zing, mostly mellow.", scoville: "500 SHU" },
-  { name: "Poblano", emoji: "🌶️", desc: "Smoky & approachable.", scoville: "1k SHU" },
-  { name: "Jalapeño", emoji: "🌶️", desc: "Classic kick — a recognizable browser.", scoville: "5k SHU" },
-  { name: "Serrano", emoji: "🌶️", desc: "Sharper than average. Memorable!", scoville: "20k SHU" },
-  { name: "Cayenne", emoji: "🔥", desc: "Hot stuff — fairly unique fingerprint.", scoville: "50k SHU" },
-  { name: "Habanero", emoji: "🔥", desc: "Burning bright — quite identifiable.", scoville: "200k SHU" },
-  { name: "Ghost Pepper", emoji: "👻🔥", desc: "Spooky unique. Trackers love you.", scoville: "1M SHU" },
-  { name: "Carolina Reaper", emoji: "💀🔥", desc: "ONE OF A KIND. Maximum heat & uniqueness!", scoville: "2.2M SHU" },
-];
-
-function pepperFromHash(hash: string) {
-  let sum = 0;
-  for (let i = 0; i < hash.length; i++) sum += hash.charCodeAt(i);
-  const idx = sum % PEPPERS.length;
-  const score = (sum % 1000) / 10; // 0-99.9
-  return { ...PEPPERS[idx], score: Math.min(99.9, 50 + score / 2) };
-}
-
-function Index() {
-  const [ipInput, setIpInput] = useState("");
-  const [info, setInfo] = useState<IpInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [fingerprint, setFingerprint] = useState<string>("");
-  const [pepper, setPepper] = useState<ReturnType<typeof pepperFromHash> | null>(null);
-  const [userAgent, setUserAgent] = useState("");
-
-  const fetchInfo = useCallback(async (ip?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const url = ip ? `https://ipapi.co/${ip}/json/` : `https://ipapi.co/json/`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.error) throw new Error(data.reason || "Lookup failed");
-      setInfo({
-        ip: data.ip,
-        hostname: data.hostname,
-        org: data.org,
-        city: data.city,
-        region: data.region,
-        country_name: data.country_name,
-        asn: data.asn,
-      });
-      if (!ip) setIpInput(data.ip);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchInfo();
-    const ua = `User-Agent: ${navigator.userAgent}\nPlatform: ${navigator.platform}\nLanguage: ${navigator.language}\nLanguages: ${navigator.languages?.join(", ")}\nScreen: ${screen.width}x${screen.height} @ ${window.devicePixelRatio}x\nViewport: ${innerWidth}x${innerHeight}\nTimezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\nCookies enabled: ${navigator.cookieEnabled}\nHardware concurrency: ${navigator.hardwareConcurrency}\nColor depth: ${screen.colorDepth}-bit`;
-    setUserAgent(ua);
-
-    FingerprintJS.load().then((fp) => fp.get()).then((r) => {
-      setFingerprint(r.visitorId);
-      setPepper(pepperFromHash(r.visitorId));
-    });
-  }, [fetchInfo]);
-
+function Landing() {
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Banner background */}
-      <div
-        className="absolute inset-0 opacity-20 bg-repeat"
-        style={{ backgroundImage: `url(${chiliBanner})`, backgroundSize: "600px" }}
-        aria-hidden
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/80 to-background" aria-hidden />
-
-      <main className="relative z-10 container mx-auto px-4 py-10 max-w-4xl">
-        {/* Hero */}
-        <header className="text-center mb-10">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <span className="text-5xl animate-flame inline-block">🔥</span>
-            <img
-              src={pepperMascot}
-              alt="Chili pepper mascot"
-              width={120}
-              height={120}
-              className="animate-float drop-shadow-2xl"
-            />
-            <span className="text-5xl animate-flame inline-block" style={{ animationDelay: "0.4s" }}>🔥</span>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Nav */}
+      <header className="sticky top-0 z-30 backdrop-blur bg-background/70 border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src={pepperMascot} alt="Pepper mascot" className="h-9 w-9 animate-wiggle" />
+            <span className="font-extrabold text-lg tracking-tight">ChiliCheck</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-spicy)" }}>
-            ChiliCheck 🌶️
+          <Link to="/app">
+            <Button size="sm" className="shadow-[var(--shadow-spicy)]">Open the app 🌶️</Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-25"
+          style={{ backgroundImage: `url(${chiliBanner})`, backgroundSize: "cover", backgroundPosition: "center" }}
+          aria-hidden
+        />
+        <div className="absolute inset-0" style={{ background: "var(--gradient-warm)", opacity: 0.55 }} aria-hidden />
+        <div className="relative max-w-6xl mx-auto px-4 py-20 md:py-28 text-center">
+          <Badge className="mb-4 bg-primary text-primary-foreground shadow-[var(--shadow-glow)]">🔥 Hot & Fresh</Badge>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight">
+            How <span style={{ background: "var(--gradient-spicy)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>spicy</span> is your browser?
           </h1>
-          <p className="mt-3 text-lg text-muted-foreground font-medium">
-            Sniff out your IP, network, and browser uniqueness — served with extra <span className="text-primary font-bold">picante</span>!
+          <p className="mt-4 max-w-2xl mx-auto text-base md:text-lg text-muted-foreground">
+            ChiliCheck reveals your IP, host, provider and browser fingerprint — and grades your uniqueness on the Scoville scale, from mild Bell Pepper to the dreaded Carolina Reaper.
           </p>
-        </header>
-
-        {/* IP lookup card */}
-        <Card className="p-6 mb-6 border-2 shadow-[var(--shadow-spicy)]" style={{ borderColor: "oklch(0.7 0.25 35 / 0.3)" }}>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">🌮</span>
-            <h2 className="text-2xl font-bold">IP Lookup</h2>
+          <div className="mt-8 flex justify-center">
+            <Link to="/app">
+              <Button size="lg" className="text-lg px-8 py-6 h-auto shadow-[var(--shadow-spicy)] animate-float">
+                🌶️ Launch ChiliCheck →
+              </Button>
+            </Link>
           </div>
-          <form
-            onSubmit={(e) => { e.preventDefault(); fetchInfo(ipInput || undefined); }}
-            className="flex flex-col sm:flex-row gap-3 mb-5"
-          >
-            <Input
-              value={ipInput}
-              onChange={(e) => setIpInput(e.target.value)}
-              placeholder="Enter any IP, e.g. 8.8.8.8"
-              className="text-base h-12 border-2"
-            />
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-12 px-6 font-bold text-base shadow-md"
-              style={{ backgroundImage: "var(--gradient-spicy)" }}
-            >
-              {loading ? "🌶️ Cooking..." : "🔥 Spice it up!"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => { setIpInput(""); fetchInfo(); }}
-              className="h-12 border-2"
-            >
-              📍 My IP
-            </Button>
-          </form>
+          <img src={pepperMascot} alt="" className="mx-auto mt-10 h-32 w-32 animate-flame" aria-hidden />
+        </div>
+      </section>
 
-          {error && <p className="text-destructive font-semibold">😵‍💫 {error}</p>}
+      {/* What it does */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <h2 className="text-3xl font-black text-center">What ChiliCheck cooks up 🍲</h2>
+        <p className="text-center text-muted-foreground mt-2">Three ingredients, one spicy result.</p>
+        <div className="grid md:grid-cols-3 gap-6 mt-10">
+          {[
+            { e: "🌐", t: "IP & Network", d: "See your public IP, hostname, ISP/ASN, city, region and country." },
+            { e: "🧠", t: "Browser Fingerprint", d: "A stable visitor ID derived from dozens of browser signals." },
+            { e: "🌶️", t: "Pepper Score", d: "Your uniqueness mapped to a pepper — from Bell to Carolina Reaper." },
+          ].map((c) => (
+            <Card key={c.t} className="p-6 border-2 hover:shadow-[var(--shadow-spicy)] transition-shadow">
+              <div className="text-4xl">{c.e}</div>
+              <h3 className="mt-3 font-bold text-lg">{c.t}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{c.d}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-          {info && !error && (
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="IP Address" value={info.ip} icon="🌐" />
-              <Field label="Hostname" value={info.hostname || "—"} icon="🏠" />
-              <Field label="Provider / Org" value={info.org || "—"} icon="🏢" />
-              <Field label="ASN" value={info.asn || "—"} icon="🔢" />
-              <Field label="City" value={info.city || "—"} icon="🌆" />
-              <Field label="Country" value={`${info.country_name || "—"}${info.region ? ` (${info.region})` : ""}`} icon="🌎" />
-            </div>
-          )}
-        </Card>
-
-        {/* Fingerprint card */}
-        <Card className="p-6 mb-6 border-2 shadow-[var(--shadow-spicy)]" style={{ borderColor: "oklch(0.7 0.22 140 / 0.3)" }}>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">🫑</span>
-            <h2 className="text-2xl font-bold">Pepper Uniqueness Score</h2>
+      {/* Tech */}
+      <section className="bg-muted/40 border-y border-border">
+        <div className="max-w-6xl mx-auto px-4 py-16">
+          <h2 className="text-3xl font-black text-center">The recipe 👨‍🍳 — tech & methods</h2>
+          <p className="text-center text-muted-foreground mt-2">What's simmering under the hood.</p>
+          <div className="grid md:grid-cols-2 gap-6 mt-10">
+            {[
+              { t: "React 19 + TanStack Start", d: "File-based routing, SSR-ready, type-safe links via TanStack Router." },
+              { t: "Vite 7 build", d: "Lightning-fast dev server and optimized production bundles." },
+              { t: "Tailwind CSS v4", d: "Theme-driven design tokens in OKLCH for a juicy, consistent palette." },
+              { t: "shadcn/ui components", d: "Accessible Button, Card, Input, Textarea and Badge primitives." },
+              { t: "FingerprintJS (open source)", d: "Generates a stable visitorId from browser signals — runs 100% client-side." },
+              { t: "ipapi.co REST API", d: "Resolves IPs to hostname, ASN/org and geolocation via HTTPS." },
+              { t: "React hooks", d: "useState / useEffect / useCallback drive lookup state and re-fetches." },
+              { t: "Custom hash → pepper mapping", d: "A tiny deterministic function converts the fingerprint into a Scoville grade." },
+            ].map((c) => (
+              <Card key={c.t} className="p-5">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">🌶️</span>
+                  <div>
+                    <h3 className="font-bold">{c.t}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{c.d}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-          {pepper ? (
-            <div className="text-center py-4">
-              <div className="text-7xl mb-3 animate-wiggle inline-block">{pepper.emoji}</div>
-              <h3 className="text-3xl font-black text-primary">{pepper.name}</h3>
-              <p className="text-muted-foreground mt-1 italic">"{pepper.desc}"</p>
-              <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
-                <Badge className="text-base px-4 py-1" style={{ backgroundImage: "var(--gradient-spicy)" }}>
-                  Heat: {pepper.scoville}
-                </Badge>
-                <Badge variant="secondary" className="text-base px-4 py-1">
-                  Uniqueness: {pepper.score.toFixed(1)}%
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-4 font-mono break-all">
-                fingerprint: {fingerprint}
+        </div>
+      </section>
+
+      {/* Security */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          <div>
+            <Badge className="bg-accent text-accent-foreground">🛡️ Data Security</Badge>
+            <h2 className="text-3xl font-black mt-3">Locked tighter than a jar of habaneros</h2>
+            <p className="text-muted-foreground mt-3">
+              ChiliCheck is a client-side app. Your fingerprint is computed in your browser and never sent to our servers — because we don't run any.
+            </p>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>✅ HTTPS everywhere — all API calls are encrypted in transit.</li>
+              <li>✅ No backend database, no user accounts, no passwords to leak.</li>
+              <li>✅ Fingerprint generation runs entirely in your browser via FingerprintJS open-source.</li>
+              <li>✅ IP lookup uses a public read-only API (ipapi.co) — no write access, no tokens.</li>
+              <li>✅ Static hosting on a hardened edge runtime (Cloudflare Workers).</li>
+            </ul>
+          </div>
+          <Card className="p-6 bg-card border-2" style={{ boxShadow: "var(--shadow-glow)" }}>
+            <h3 className="font-bold text-lg">🔐 What we never touch</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              No cookies for tracking. No third-party ad scripts. No analytics SDKs lurking in the salsa. Just code that loads, runs, and minds its own business.
+            </p>
+          </Card>
+        </div>
+      </section>
+
+      {/* Privacy */}
+      <section className="bg-muted/40 border-y border-border">
+        <div className="max-w-6xl mx-auto px-4 py-16">
+          <div className="grid md:grid-cols-2 gap-8 items-start">
+            <Card className="p-6 bg-card border-2">
+              <h3 className="font-bold text-lg">🌶️ The honest truth</h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Yes, ChiliCheck shows you how identifiable you are — that's the whole point. We use that knowledge to teach, not to track. Nothing you do here is logged or stored by us.
               </p>
+            </Card>
+            <div>
+              <Badge className="bg-secondary text-secondary-foreground">🕵️ Data Privacy</Badge>
+              <h2 className="text-3xl font-black mt-3">Your data stays in your kitchen</h2>
+              <p className="text-muted-foreground mt-3">
+                We believe privacy should be the default ingredient, not an upsell.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li>🚫 No personal data collection — we don't ask for your name or email.</li>
+                <li>🚫 No tracking cookies, no localStorage profiling, no cross-site identifiers.</li>
+                <li>🚫 No data sold or shared with third parties.</li>
+                <li>📡 Only outbound call: ipapi.co for IP geolocation (their privacy policy applies).</li>
+                <li>🌍 GDPR-friendly by design: nothing to delete because nothing is stored.</li>
+              </ul>
             </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">🌶️ Tasting your fingerprint...</p>
-          )}
-        </Card>
-
-        {/* Raw browser info */}
-        <Card className="p-6 mb-6 border-2 shadow-[var(--shadow-spicy)]" style={{ borderColor: "oklch(0.85 0.18 70 / 0.5)" }}>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">📜</span>
-            <h2 className="text-2xl font-bold">Raw Browser Salsa</h2>
           </div>
-          <Textarea
-            value={userAgent}
-            readOnly
-            className="font-mono text-xs h-56 border-2 resize-none"
-          />
-        </Card>
+        </div>
+      </section>
 
-        <footer className="text-center text-sm text-muted-foreground mt-8">
-          Made with 🌶️, 🧀 and a dash of 🔥 — no beans were harmed.
-        </footer>
-      </main>
-    </div>
-  );
-}
+      {/* Big CTA */}
+      <section className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <h2 className="text-4xl md:text-5xl font-black">Ready to taste the heat? 🔥</h2>
+        <p className="mt-3 text-muted-foreground">Open the app and find your pepper grade in seconds.</p>
+        <div className="mt-8">
+          <Link to="/app">
+            <Button
+              size="lg"
+              className="text-xl md:text-2xl px-10 py-8 h-auto shadow-[var(--shadow-spicy)] animate-float"
+            >
+              🌶️ Launch ChiliCheck App →
+            </Button>
+          </Link>
+        </div>
+      </section>
 
-function Field({ label, value, icon }: { label: string; value: string; icon: string }) {
-  return (
-    <div className="bg-muted/60 rounded-xl p-3 border border-border">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground font-semibold flex items-center gap-1">
-        <span>{icon}</span> {label}
-      </div>
-      <div className="font-mono text-sm font-semibold mt-1 break-all">{value}</div>
+      <footer className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
+          Made with 🌶️ &amp; React. ChiliCheck is for fun and education — eat responsibly.
+        </div>
+      </footer>
     </div>
   );
 }
