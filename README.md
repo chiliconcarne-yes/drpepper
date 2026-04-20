@@ -46,7 +46,7 @@ ChiliCheck is a **client-side application** with no backend database, no user ac
 
 ## License
 
-MIT
+MIT — see [LICENSES.md](./LICENSES.md) for a full list of open-source dependencies used.
 
 ## Links
 
